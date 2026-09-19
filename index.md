@@ -3,12 +3,12 @@ layout: default
 title: Hatem Mohamed
 ---
 
-<nav class="console-strip" aria-label="Profiles">
-  <span class="console-prompt" aria-hidden="true">&#10095;</span>
-  <a href="https://github.com/hmohamed01">github.com/hmohamed01</a>
-  <a href="https://app.pluralsight.com/profile/hmohamed12">pluralsight.com/hmohamed12</a>
-  <a href="https://www.goodreads.com/hatem_m">goodreads.com/hatem_m</a>
-  <span class="console-cursor" aria-hidden="true"></span>
+<nav aria-label="Profiles">
+<pre class="console-splat"><code><span class="tok-prompt" aria-hidden="true">&#10095;</span> <span class="tok-var">$Links</span> <span class="tok-op" aria-hidden="true">=</span> <span class="tok-op" aria-hidden="true">@{</span>
+    <span class="tok-key">GitHub</span>      <span class="tok-op" aria-hidden="true">=</span> <span class="tok-op" aria-hidden="true">'</span><a href="https://github.com/hmohamed01">https://github.com/hmohamed01</a><span class="tok-op" aria-hidden="true">'</span>
+    <span class="tok-key">Pluralsight</span> <span class="tok-op" aria-hidden="true">=</span> <span class="tok-op" aria-hidden="true">'</span><a href="https://app.pluralsight.com/profile/hmohamed12">https://app.pluralsight.com/profile/hmohamed12</a><span class="tok-op" aria-hidden="true">'</span>
+    <span class="tok-key">Goodreads</span>   <span class="tok-op" aria-hidden="true">=</span> <span class="tok-op" aria-hidden="true">'</span><a href="https://www.goodreads.com/hatem_m">https://www.goodreads.com/hatem_m</a><span class="tok-op" aria-hidden="true">'</span>
+<span class="tok-op" aria-hidden="true">}</span><span class="console-cursor" aria-hidden="true"></span></code></pre>
 </nav>
 
 [Link to another page](./another-page.html)

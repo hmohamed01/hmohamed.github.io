@@ -5,43 +5,58 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400;700&display=swap">
 <style>
-  .console-strip {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 22px;
+  .console-splat {
     margin: -15px -20px 25px;
-    padding: 12px 20px;
+    padding: 16px 20px;
     background: linear-gradient(#0A3D7A, #011E45);
+    color: #C9E9FF;
     font-family: 'Cascadia Code', ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.7;
   }
 
-  .console-strip a {
+  .console-splat code {
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  .console-splat a {
     color: #C9E9FF;
     border-bottom: 1px solid rgba(123, 232, 255, 0.3);
   }
 
-  .console-strip a:hover {
+  .console-splat a:hover {
     color: #7BE8FF;
     border-bottom-color: #7BE8FF;
   }
 
-  .console-strip a:focus-visible {
+  .console-splat a:focus-visible {
     outline: 2px solid #7BE8FF;
     outline-offset: 3px;
     border-bottom-color: transparent;
   }
 
-  .console-prompt {
+  .tok-prompt,
+  .tok-var {
     color: #7BE8FF;
     font-weight: 700;
   }
 
+  .tok-key {
+    color: #E3F0FF;
+  }
+
+  .tok-op {
+    color: #3D8FE0;
+  }
+
   .console-cursor {
+    display: inline-block;
     width: 8px;
-    height: 16px;
+    height: 15px;
+    margin-left: 4px;
+    vertical-align: text-bottom;
     background: #3D8FE0;
     animation: console-blink 1.4s steps(1) infinite;
   }
