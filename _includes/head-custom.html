@@ -67,5 +67,85 @@
 
   @media (prefers-reduced-motion: reduce) {
     .console-cursor { animation: none; }
+    .copy-code { transition: none; }
+  }
+
+  div[class*="language-"]:not(.language-plaintext) {
+    position: relative;
+  }
+
+  .copy-code {
+    position: absolute;
+    top: 10px;
+    right: -10px;
+    z-index: 1;
+    padding: 4px 10px;
+    border: 1px solid rgba(123, 232, 255, 0.35);
+    border-radius: 4px;
+    background: rgba(1, 30, 69, 0.85);
+    color: #C9E9FF;
+    font-family: 'Cascadia Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background-color .15s;
+  }
+
+  .copy-code:hover {
+    color: #7BE8FF;
+    border-color: #7BE8FF;
+    background: #011E45;
+  }
+
+  .copy-code:focus-visible {
+    outline: 2px solid #7BE8FF;
+    outline-offset: 2px;
+  }
+
+  .copy-code[data-state="done"] {
+    color: #7BE8FF;
+    border-color: #7BE8FF;
+  }
+
+  @media print {
+    .copy-code { display: none; }
   }
 </style>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const copyKey = /Mac|iPhone|iPad/.test(navigator.userAgent) ? '\u2318C' : 'Ctrl+C';
+
+    document.querySelectorAll('div[class*="language-"]:not(.language-plaintext)').forEach((block) => {
+      const code = block.querySelector('pre code');
+      if (!code) return;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'copy-code';
+      button.textContent = 'Copy';
+      button.setAttribute('aria-label', 'Copy code to clipboard');
+
+      let resetTimer;
+      button.addEventListener('click', async () => {
+        clearTimeout(resetTimer);
+        try {
+          await navigator.clipboard.writeText(code.textContent);
+          button.textContent = 'Copied';
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(code);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          button.textContent = 'Press ' + copyKey;
+        }
+        button.dataset.state = 'done';
+        resetTimer = setTimeout(() => {
+          button.textContent = 'Copy';
+          delete button.dataset.state;
+        }, 2000);
+      });
+
+      block.appendChild(button);
+    });
+  });
+</script>
