@@ -3,11 +3,9 @@ layout: default
 title: Hatem Mohamed
 ---
 
-Text can be **bold**, _italic_, or ~~strikethrough~~.
+[My GitHub profile](https://github.com/hmohamed01)
 
-[My GitHub profile](https://github.com/hmohamed01).
-
-[Link to another page](./another-page.html).
+[Link to another page](./another-page.html)
 
 There should be whitespace between paragraphs.
 
