@@ -1,5 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Terminal prompt">
-  <rect width="64" height="64" rx="12" fill="#1c1f26"/>
-  <path d="M18 21 L29 32 L18 43" fill="none" stroke="#f0a202" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="34" y="36.5" width="15" height="7" rx="3.5" fill="#f0a202"/>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0A3D7A"/>
+      <stop offset="1" stop-color="#011E45"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="13" fill="url(#tile)"/>
+  <path d="M17 19 L31 32 L17 45" fill="none" stroke="#7BE8FF" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="39" y="22" width="11" height="20" rx="2.5" fill="#3D8FE0"/>
 </svg>
