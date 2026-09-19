@@ -5,7 +5,7 @@ title: Hatem Mohamed
 
 [My GitHub profile](https://github.com/hmohamed01)
 
-[My learning profile](https://app.pluralsight.com/profile/hmohamed12)
+[Skills profile](https://app.pluralsight.com/profile/hmohamed12)
 
 [Link to another page](./another-page.html)
 
