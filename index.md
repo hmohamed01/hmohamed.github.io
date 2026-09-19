@@ -3,11 +3,11 @@ layout: default
 title: Hatem Mohamed
 ---
 
-[My GitHub profile](https://github.com/hmohamed01)
-
-[Skills profile](https://app.pluralsight.com/profile/hmohamed12)
-
-[Link to another page](./another-page.html)
+<nav class="profile-links">
+  <a href="https://github.com/hmohamed01">My GitHub profile</a>
+  <a href="https://app.pluralsight.com/profile/hmohamed12">Skills profile</a>
+  <a href="./another-page.html">Link to another page</a>
+</nav>
 
 
 # Header 1
