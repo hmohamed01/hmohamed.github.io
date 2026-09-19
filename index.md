@@ -1,6 +1,6 @@
 ---
-layout: home
-title: My Site
+layout: default
+title: Hatem Mohamed
 ---
 
 First content.
