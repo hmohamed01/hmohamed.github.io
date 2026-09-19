@@ -3,13 +3,6 @@ layout: default
 title: Hatem Mohamed
 ---
 
-<nav class="profile-links">
-  <a href="https://github.com/hmohamed01">My GitHub profile</a>
-  <a href="https://app.pluralsight.com/profile/hmohamed12">Skills profile</a>
-  <a href="./another-page.html">Link to another page</a>
-</nav>
-
-
 # Header 1
 
 This is a normal paragraph following a header. GitHub is a code hosting platform for version control and collaboration. It lets you and others work together on projects from anywhere.
