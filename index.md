@@ -7,6 +7,7 @@ title: Hatem Mohamed
   <span class="console-prompt" aria-hidden="true">&#10095;</span>
   <a href="https://github.com/hmohamed01">github.com/hmohamed01</a>
   <a href="https://app.pluralsight.com/profile/hmohamed12">pluralsight.com/hmohamed12</a>
+  <a href="https://www.goodreads.com/hatem_m">goodreads.com/hatem_m</a>
   <span class="console-cursor" aria-hidden="true"></span>
 </nav>
 
