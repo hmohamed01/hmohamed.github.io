@@ -1,11 +1,56 @@
 <link rel="icon" href="{{ '/favicon-32.png' | relative_url }}" sizes="32x32" type="image/png">
 <link rel="icon" href="{{ '/favicon.svg' | relative_url }}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{{ '/apple-touch-icon.png' | relative_url }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400;700&display=swap">
 <style>
-  .profile-links {
+  .console-strip {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-evenly;
-    gap: 0.5rem 1.5rem;
+    align-items: center;
+    gap: 6px 22px;
+    margin: -15px -20px 25px;
+    padding: 12px 20px;
+    background: linear-gradient(#0A3D7A, #011E45);
+    font-family: 'Cascadia Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .console-strip a {
+    color: #C9E9FF;
+    border-bottom: 1px solid rgba(123, 232, 255, 0.3);
+  }
+
+  .console-strip a:hover {
+    color: #7BE8FF;
+    border-bottom-color: #7BE8FF;
+  }
+
+  .console-strip a:focus-visible {
+    outline: 2px solid #7BE8FF;
+    outline-offset: 3px;
+    border-bottom-color: transparent;
+  }
+
+  .console-prompt {
+    color: #7BE8FF;
+    font-weight: 700;
+  }
+
+  .console-cursor {
+    width: 8px;
+    height: 16px;
+    background: #3D8FE0;
+    animation: console-blink 1.4s steps(1) infinite;
+  }
+
+  @keyframes console-blink {
+    50% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .console-cursor { animation: none; }
   }
 </style>

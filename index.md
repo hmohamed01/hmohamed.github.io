@@ -3,12 +3,14 @@ layout: default
 title: Hatem Mohamed
 ---
 
-<nav class="profile-links">
-  <a href="https://github.com/hmohamed01">My GitHub profile</a>
-  <a href="https://app.pluralsight.com/profile/hmohamed12">Skills profile</a>
-  <a href="./another-page.html">Link to another page</a>
+<nav class="console-strip" aria-label="Profiles">
+  <span class="console-prompt" aria-hidden="true">&#10095;</span>
+  <a href="https://github.com/hmohamed01">github.com/hmohamed01</a>
+  <a href="https://app.pluralsight.com/profile/hmohamed12">pluralsight.com/hmohamed12</a>
+  <span class="console-cursor" aria-hidden="true"></span>
 </nav>
 
+[Link to another page](./another-page.html)
 
 # Header 1
 
