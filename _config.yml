@@ -1,6 +1,6 @@
 title: My Site
 description: One line about the site
-theme: minima
+
 baseurl: ""          # project site? set this to /REPO-NAME
 url: "https://USER.github.io"
 remote_theme: pages-themes/modernist@v0.2.0
