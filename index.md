@@ -11,7 +11,7 @@ title: Hatem Mohamed
 <span class="tok-op" aria-hidden="true">}</span><span class="console-cursor" aria-hidden="true"></span></code></pre>
 </nav>
 
-[CSP Anatomy](./another-page.html)
+[CSP Anatomy](./csp-anatomy.html)
 
 # Header 1
 

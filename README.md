@@ -23,7 +23,9 @@ Jekyll, built and deployed by GitHub Actions on every push to `main`.
 ```
 _config.yml      site settings - title, description, url, theme
 index.md         home page
-another-page.md  demo second page, linked from index
+csp-anatomy.md   CSP Anatomy note, linked from index
+favicon.svg      site icon (PNG fallbacks alongside it)
+_includes/       head-custom.html - icons, fonts, custom CSS
 .github/         the build and deploy workflow
 ```
 
@@ -61,4 +63,4 @@ The empty front matter delimiters are required — without them Jekyll treats th
 
 ## Current state
 
-The content of `index.md` and `another-page.md` is the theme's demo boilerplate, kept deliberately so every styled element is visible. Replace it with real content and delete `another-page.md` when it stops being useful.
+`csp-anatomy.md` is a real note imported from the Obsidian vault. `index.md` still carries the theme's demo boilerplate below the links block, kept so every styled element stays visible — replace it when it stops being useful.
