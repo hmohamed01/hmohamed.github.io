@@ -24,6 +24,7 @@ Jekyll, built and deployed by GitHub Actions on every push to `main`.
 _config.yml      site settings - title, description, url, theme
 index.md         home page
 csp-anatomy.md   CSP Anatomy note, linked from index
+*.html           standalone interactive pages, served verbatim (no front matter)
 favicon.svg      site icon (PNG fallbacks alongside it)
 _includes/       head-custom.html - icons, fonts, custom CSS
 .github/         the build and deploy workflow
@@ -63,4 +64,4 @@ The empty front matter delimiters are required — without them Jekyll treats th
 
 ## Current state
 
-`csp-anatomy.md` is a real note imported from the Obsidian vault. `index.md` still carries the theme's demo boilerplate below the links block, kept so every styled element stays visible — replace it when it stops being useful.
+The theme's demo boilerplate is gone. `index.md` is the links block plus a list of the three reference pages; `csp-anatomy.md` is imported from the Obsidian vault, and `intune-csp-flow.html` and `oma-uri-tree.html` are self-contained interactive pages.
