@@ -73,9 +73,11 @@ Rejected directions, so they don't get re-proposed: amber-on-slate, and Microsof
 
 ## Page types
 
-**Markdown pages** (`index.md`, `csp-anatomy.md`) — front matter with `layout: default` and `title`, at the repo root.
+Content is organised into topic folders (`CSP-MDM-Deep-Dive/` is the first). Only `index.md` stays at the root — Jekyll expects it there. Link to pages from the homepage with root-absolute paths (`/CSP-MDM-Deep-Dive/page.html`), which stay correct regardless of which page does the linking.
 
-**Standalone HTML** (`intune-csp-flow.html`, `oma-uri-tree.html`) — self-contained interactive documents with their own styling, carrying **no front matter**. Jekyll copies them verbatim as static files. Adding front matter would run them through Liquid, which breaks any file containing `{{` or `{%` — check before converting one.
+**Markdown pages** (`CSP-MDM-Deep-Dive/csp-anatomy.md`) — front matter with `layout: default` and `title`.
+
+**Standalone HTML** (`CSP-MDM-Deep-Dive/intune-csp-flow.html`, `oma-uri-tree.html`) — self-contained interactive documents with their own styling, carrying **no front matter**. Jekyll copies them verbatim as static files. Adding front matter would run them through Liquid, which breaks any file containing `{{` or `{%` — check before converting one.
 
 Verify a static page survived intact by diffing the served copy against the source.
 

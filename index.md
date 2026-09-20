@@ -11,6 +11,6 @@ title: Hatem Mohamed
 <span class="tok-op" aria-hidden="true">}</span><span class="console-cursor" aria-hidden="true"></span></code></pre>
 </nav>
 
-- [CSP Anatomy](./csp-anatomy.html)
-- [Intune ↔ CSP flow](./intune-csp-flow.html)
-- [OMA-URI tree](./oma-uri-tree.html)
+- [CSP Anatomy](/CSP-MDM-Deep-Dive/csp-anatomy.html)
+- [Intune ↔ CSP flow](/CSP-MDM-Deep-Dive/intune-csp-flow.html)
+- [OMA-URI tree](/CSP-MDM-Deep-Dive/oma-uri-tree.html)

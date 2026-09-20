@@ -21,18 +21,17 @@ Jekyll, built and deployed by GitHub Actions on every push to `main`.
 ## Files
 
 ```
-_config.yml      site settings - title, description, url, theme
-index.md         home page
-csp-anatomy.md   CSP Anatomy note, linked from index
-*.html           standalone interactive pages, served verbatim (no front matter)
-favicon.svg      site icon (PNG fallbacks alongside it)
-_includes/       head-custom.html - icons, fonts, custom CSS
-.github/         the build and deploy workflow
+_config.yml         site settings - title, description, url, theme
+index.md            home page - must stay at the root
+CSP-MDM-Deep-Dive/  topic folder; content lives in folders like this
+favicon.svg         site icon (PNG fallbacks alongside it)
+_includes/          head-custom.html - icons, fonts, custom CSS
+.github/            the build and deploy workflow
 ```
 
 ## Adding a page
 
-Create a `.md` file at the repo root with front matter:
+Content is organised in topic folders. Create a `.md` file inside one with front matter:
 
 ```markdown
 ---
@@ -45,7 +44,7 @@ Content here.
 
 **`layout: default` is the only layout this theme provides.** Modernist ships a single `_layouts/default.html` — `home`, `page` and `post` come from other themes and will render the page unstyled with only a build *warning*, not an error. The deploy will go green regardless, so the failure is easy to miss.
 
-Link between pages with a relative path, e.g. `[About](./about.html)`.
+Link to it from the homepage with a root-absolute path, e.g. `[About](/Topic-Folder/about.html)`. Relative paths work too, but absolute ones stay correct no matter which page links to them.
 
 ## Editing the look
 
@@ -64,4 +63,4 @@ The empty front matter delimiters are required — without them Jekyll treats th
 
 ## Current state
 
-The theme's demo boilerplate is gone. `index.md` is the links block plus a list of the three reference pages; `csp-anatomy.md` is imported from the Obsidian vault, and `intune-csp-flow.html` and `oma-uri-tree.html` are self-contained interactive pages.
+`index.md` is the links block plus a list of reference pages. `CSP-MDM-Deep-Dive/` holds the first topic: `csp-anatomy.md` imported from the Obsidian vault, plus `intune-csp-flow.html` and `oma-uri-tree.html`, which are self-contained interactive pages.
