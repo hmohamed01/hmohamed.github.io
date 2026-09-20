@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMA-URI management tree — common namespaces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c151e; --panel:#13202c; --panel2:#16242f; --edge:#243643; --edge-soft:#1d2c38;
+    --guide:#314656; --text:#cad7e1; --muted:#7d94a7; --dim:#5d7488;
+    --dev:#5b93ff; --dev-bg:rgba(91,147,255,.12);
+    --usr:#f2a23a; --usr-bg:rgba(242,162,58,.12);
+    --std:#34c98a; --std-bg:rgba(52,201,138,.12);
+    --dual:#a983f0; --read:#7d94a7;
+    --r:13px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:
+      radial-gradient(1200px 600px at 78% -8%, rgba(91,147,255,.10), transparent 60%),
+      var(--bg);
+    color:var(--text); font-family:"IBM Plex Sans",system-ui,sans-serif; line-height:1.55;
+    padding:38px 22px 64px; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto}
+  code,.mono{font-family:"IBM Plex Mono",monospace}
+
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);display:flex;gap:10px;align-items:center}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--muted);display:inline-block}
+  h1{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(27px,4.6vw,44px);
+    line-height:1.04;letter-spacing:-.02em;margin:.34em 0 .2em;color:#eaf1f7}
+  .sub{color:var(--muted);max-width:66ch;font-size:15.5px}
+  .sub b{color:var(--text);font-weight:600}
+
+  /* grammar strip */
+  .grammar{margin:24px 0 8px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);
+    padding:16px 18px;font-family:"IBM Plex Mono",monospace;overflow-x:auto}
+  .grammar .line{font-size:15px;white-space:nowrap}
+  .g-root{color:var(--muted)}
+  .g-ctx{color:var(--dev)} .g-ctx.u{color:var(--usr)}
+  .g-vendor{color:var(--std)}
+  .g-csp{color:#eaf1f7}
+  .g-node{color:var(--muted)}
+  .grammar .labels{display:flex;gap:30px;margin-top:8px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);flex-wrap:wrap}
+  .grammar .labels span{position:relative;padding-left:14px}
+  .grammar .labels span::before{content:"";position:absolute;left:0;top:6px;width:8px;height:1px;background:currentColor}
+  .l-ctx{color:var(--dev)} .l-vendor{color:var(--std)} .l-csp{color:#9fb3c4}
+
+  /* legend */
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:0 0 18px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .badge{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;padding:1px 7px;border-radius:5px;
+    border:1px solid currentColor}
+  .badge.dual{color:var(--dual)}
+  .badge.read{color:var(--read)}
+  .badge.dev{color:var(--dev)}
+
+  /* layout */
+  .cols{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;align-items:start}
+
+  /* tree */
+  .tree{background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);padding:14px 10px 16px;overflow-x:auto}
+  .row{display:flex;align-items:baseline;width:100%;text-align:left;background:transparent;border:none;
+    color:inherit;font-family:"IBM Plex Mono",monospace;font-size:13.5px;padding:4px 8px;border-radius:7px;
+    cursor:pointer;transition:background .14s;white-space:nowrap;gap:0}
+  .row:hover{background:var(--panel2)}
+  .row.sel{background:var(--panel2);box-shadow:inset 0 0 0 1px var(--edge)}
+  .row.static{cursor:default}
+  .row.static:hover{background:transparent}
+  .pfx{color:var(--guide);white-space:pre;flex:none}
+  .nm{font-weight:600}
+  .nm.dev{color:#9cc0ff} .nm.usr{color:#ffce8f} .nm.std{color:#7fe0b8}
+  .ctxhdr .nm{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:14px;letter-spacing:.02em}
+  .ctxhdr.dev .nm{color:var(--dev)} .ctxhdr.usr .nm{color:var(--usr)}
+  .ctxtag{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--dim);margin-left:10px}
+  .mk{margin-left:10px;font-size:10px;letter-spacing:.03em;padding:0 6px;border-radius:5px;border:1px solid currentColor;flex:none}
+  .mk.dual{color:var(--dual)} .mk.read{color:var(--read)} .mk.dev{color:#5f7d92;border-color:#33485a}
+  .hint{margin-left:12px;color:var(--dim);font-size:12px;white-space:nowrap}
+  .row .exp{margin-left:auto;color:var(--guide);font-size:11px;padding-left:14px;flex:none}
+  .blank{height:8px}
+
+  /* detail */
+  .detail{position:sticky;top:20px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);
+    padding:20px;min-height:260px}
+  .detail .dk{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .detail .dn{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:21px;color:#eaf1f7;margin:6px 0 2px}
+  .scoperow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
+  .sc{font-family:"IBM Plex Mono",monospace;font-size:11px;padding:3px 9px;border-radius:6px;border:1px solid currentColor}
+  .sc.dev{color:var(--dev)} .sc.usr{color:var(--usr)} .sc.std{color:var(--std)} .sc.read{color:var(--read)} .sc.dual{color:var(--dual)}
+  .detail .dd{font-size:14.5px;color:#bccad6}
+  .pathlabel{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin:16px 0 6px}
+  .pathbox{background:#0a131b;border:1px solid var(--edge);border-radius:9px;padding:11px 12px;
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:#d6e2ec;word-break:break-all;line-height:1.7}
+  .pathbox .ctx{color:var(--dev)} .pathbox .ctx.u{color:var(--usr)}
+  .pathbox .ven{color:var(--std)} .pathbox .csp{color:#eaf1f7;font-weight:600} .pathbox .leaf{color:#9fb3c4}
+  .dnote{font-size:12.5px;color:var(--muted);margin-top:14px;padding-top:13px;border-top:1px dashed var(--edge)}
+  .dplaceholder{color:var(--muted);font-size:14px}
+  .dplaceholder .tip{font-size:12.5px;color:var(--dim);margin-top:10px}
+
+  /* policy deep-dive */
+  .deep{margin-top:26px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);padding:22px 22px 24px}
+  .deep-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .deep-head h2{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:20px;color:#eaf1f7;margin:0}
+  .deep-head .tagpill{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em;color:var(--dual);
+    border:1px solid var(--dual);border-radius:5px;padding:1px 7px}
+  .deep-sub{color:var(--muted);font-size:14px;margin:0 0 18px;max-width:74ch}
+  .deep-path{font-family:"IBM Plex Mono",monospace;font-size:13px;color:#9fb3c4;margin-bottom:16px;word-break:break-all}
+  .deep-path .ctx{color:var(--dev)} .deep-path .ctx.u{color:var(--usr)} .deep-path .ven{color:var(--std)} .deep-path .csp{color:#eaf1f7;font-weight:600}
+
+  .branches{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:22px}
+  .branch{border:1px solid var(--edge);border-radius:10px;padding:14px 15px;background:var(--panel2)}
+  .branch .bk{font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600}
+  .branch.config .bk{color:#9cc0ff} .branch.result .bk{color:#7fe0b8} .branch.ops .bk{color:#ffce8f}
+  .branch .bt{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--dim);margin:6px 0 7px}
+  .branch .bd{font-size:13px;color:#bccad6}
+
+  .areas-label{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:10px}
+  .areas{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  .area{font-family:"IBM Plex Mono",monospace;font-size:13px;border:1px solid var(--edge);background:var(--panel2);
+    color:#cad7e1;border-radius:8px;padding:8px 13px;cursor:pointer;transition:border-color .14s,background .14s}
+  .area:hover{border-color:var(--guide)}
+  .area.sel{border-color:var(--dev);background:rgba(91,147,255,.10);color:#eaf1f7}
+
+  .area-detail{border-top:1px solid var(--edge);padding-top:18px;min-height:120px}
+  .area-detail .an{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:17px;color:#eaf1f7}
+  .area-detail .ad{font-size:13.5px;color:#bccad6;margin:4px 0 14px}
+  .pols{display:flex;flex-direction:column;gap:10px}
+  .pol{background:#0a131b;border:1px solid var(--edge);border-radius:9px;padding:11px 13px}
+  .pol .pn{font-family:"IBM Plex Mono",monospace;font-size:13px;color:#eaf1f7;font-weight:600}
+  .pol .pd{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .pol .pp{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#8fa8bd;margin-top:8px;word-break:break-all;line-height:1.6}
+  .pol .pp .ctx{color:var(--dev)} .pol .pp .ven{color:var(--std)} .pol .pp .csp{color:#cdd9e3} .pol .pp .br{color:#9cc0ff} .pol .pp .br.r{color:#7fe0b8} .pol .pp .leaf{color:#eaf1f7}
+  .area-ph{color:var(--muted);font-size:13.5px}
+
+  @media(max-width:820px){.branches{grid-template-columns:1fr}}
+
+  .foot{margin-top:22px;font-size:12px;color:var(--muted);font-family:"IBM Plex Mono",monospace;letter-spacing:.02em;
+    background:var(--panel);border:1px solid var(--edge);border-left:3px solid var(--usr);border-radius:var(--r);padding:13px 15px}
+  .foot b{color:var(--text)}
+
+  @media(max-width:820px){
+    .cols{grid-template-columns:1fr}
+    .detail{position:static}
+    .hint{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){.row{transition:none}}
+  :focus-visible{outline:2.5px solid var(--dev);outline-offset:2px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">CSP management tree · common namespaces</div>
+  <h1>The OMA-URI tree</h1>
+  <p class="sub">Where every OMA-URI lives. A path is a <b>context root</b>, the <b>vendor namespace</b>, then a <b>CSP</b> and its nodes. Dual-context CSPs appear under both roots — same provider, two scopes. This is the common subset, not the full tree.</p>
+
+  <div class="grammar">
+    <div class="line">
+      <span class="g-root">./</span><span class="g-ctx">Device</span><span class="g-root"> | </span><span class="g-ctx u">User</span><span class="g-root"> | —</span><span class="g-root"> / </span><span class="g-vendor">Vendor/MSFT</span><span class="g-root"> / </span><span class="g-csp">{CSP}</span><span class="g-root"> / </span><span class="g-node">{nodes…}</span>
+    </div>
+    <div class="labels">
+      <span class="l-ctx">context root — picks scope</span>
+      <span class="l-vendor">vendor namespace — always MSFT</span>
+      <span class="l-csp">CSP + nodes — the actual setting</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--dev)"></i>device context</span>
+    <span><i style="background:var(--usr)"></i>user context</span>
+    <span><i style="background:var(--std)"></i>standard OMA-DM node</span>
+    <span><span class="badge dual">⇄ dual</span>same CSP in both scopes</span>
+    <span><span class="badge read">read</span>reporting / Get only</span>
+  </div>
+
+  <div class="cols">
+    <div class="tree" id="tree">
+      <div class="row static"><span class="pfx">./</span><span class="nm" style="color:#eaf1f7">&nbsp;</span><span class="hint">management tree root</span></div>
+
+      <div class="row static"><span class="pfx">│</span></div>
+      <button class="row" data-k="devinfo"><span class="pfx">├─ </span><span class="nm std">DevInfo/</span><span class="mk read">read</span><span class="hint">basic identity</span><span class="exp">▸</span></button>
+      <button class="row" data-k="devdetail"><span class="pfx">└─ </span><span class="nm std">DevDetail/</span><span class="mk read">read</span><span class="hint">extended details · Ext/Microsoft</span><span class="exp">▸</span></button>
+
+      <div class="blank"></div>
+      <div class="row static ctxhdr dev"><span class="pfx">┌─ </span><span class="nm">Device/ Vendor/ MSFT/</span><span class="ctxtag">machine-wide</span></div>
+      <button class="row" data-k="policy"><span class="pfx">│  ├─ </span><span class="nm dev">Policy/</span><span class="mk dual">⇄ dual</span><span class="hint">Config/ · Result/</span><span class="exp">▸</span></button>
+      <button class="row" data-k="dmclient"><span class="pfx">│  ├─ </span><span class="nm dev">DMClient/</span><span class="mk dev">device</span><span class="hint">enrollment · poll · push</span><span class="exp">▸</span></button>
+      <button class="row" data-k="bitlocker"><span class="pfx">│  ├─ </span><span class="nm dev">BitLocker/</span><span class="mk dev">device</span><span class="hint">encryption enforcement</span><span class="exp">▸</span></button>
+      <button class="row" data-k="update"><span class="pfx">│  ├─ </span><span class="nm dev">Update/</span><span class="mk dev">device</span><span class="hint">Windows Update for Business</span><span class="exp">▸</span></button>
+      <button class="row" data-k="reboot"><span class="pfx">│  ├─ </span><span class="nm dev">Reboot/</span><span class="mk dev">device</span><span class="hint">schedule / execute</span><span class="exp">▸</span></button>
+      <button class="row" data-k="defender"><span class="pfx">│  ├─ </span><span class="nm dev">Defender/</span><span class="mk dev">device</span><span class="hint">AV / EDR policy</span><span class="exp">▸</span></button>
+      <button class="row" data-k="firewall"><span class="pfx">│  ├─ </span><span class="nm dev">Firewall/</span><span class="mk dev">device</span><span class="hint">profiles &amp; rules</span><span class="exp">▸</span></button>
+      <button class="row" data-k="devicestatus"><span class="pfx">│  ├─ </span><span class="nm dev">DeviceStatus/</span><span class="mk read">read</span><span class="hint">compliance / inventory</span><span class="exp">▸</span></button>
+      <button class="row" data-k="assignedaccess"><span class="pfx">│  ├─ </span><span class="nm dev">AssignedAccess/</span><span class="mk dev">device</span><span class="hint">kiosk / restricted shell</span><span class="exp">▸</span></button>
+      <button class="row" data-k="licensing"><span class="pfx">│  ├─ </span><span class="nm dev">WindowsLicensing/</span><span class="mk dev">device</span><span class="hint">edition / license</span><span class="exp">▸</span></button>
+      <button class="row" data-k="wifi"><span class="pfx">│  ├─ </span><span class="nm dev">Wifi/</span><span class="mk dev">device</span><span class="hint">Wi-Fi profiles</span><span class="exp">▸</span></button>
+      <button class="row" data-k="emam"><span class="pfx">│  ├─ </span><span class="nm dev">EnterpriseModernAppManagement/</span><span class="mk dual">⇄ dual</span><span class="exp">▸</span></button>
+      <button class="row" data-k="cci"><span class="pfx">│  ├─ </span><span class="nm dev">ClientCertificateInstall/</span><span class="mk dual">⇄ dual</span><span class="exp">▸</span></button>
+      <button class="row" data-k="passport"><span class="pfx">│  ├─ </span><span class="nm dev">PassportForWork/</span><span class="mk dual">⇄ dual</span><span class="hint">Windows Hello for Business</span><span class="exp">▸</span></button>
+      <button class="row" data-k="vpn"><span class="pfx">│  └─ </span><span class="nm dev">VPNv2/</span><span class="mk dual">⇄ dual</span><span class="hint">VPN profiles</span><span class="exp">▸</span></button>
+
+      <div class="blank"></div>
+      <div class="row static ctxhdr usr"><span class="pfx">└─ </span><span class="nm">User/ Vendor/ MSFT/</span><span class="ctxtag">enrolled user</span></div>
+      <button class="row" data-k="policy"><span class="pfx">   ├─ </span><span class="nm usr">Policy/</span><span class="mk dual">⇄ dual</span><span class="hint">user-scoped policies</span><span class="exp">▸</span></button>
+      <button class="row" data-k="emam"><span class="pfx">   ├─ </span><span class="nm usr">EnterpriseModernAppManagement/</span><span class="mk dual">⇄ dual</span><span class="exp">▸</span></button>
+      <button class="row" data-k="cci"><span class="pfx">   ├─ </span><span class="nm usr">ClientCertificateInstall/</span><span class="mk dual">⇄ dual</span><span class="hint">user certs</span><span class="exp">▸</span></button>
+      <button class="row" data-k="passport"><span class="pfx">   ├─ </span><span class="nm usr">PassportForWork/</span><span class="mk dual">⇄ dual</span><span class="hint">user enrollment</span><span class="exp">▸</span></button>
+      <button class="row" data-k="vpn"><span class="pfx">   ├─ </span><span class="nm usr">VPNv2/</span><span class="mk dual">⇄ dual</span><span class="hint">user tunnels</span><span class="exp">▸</span></button>
+      <button class="row" data-k="rootca"><span class="pfx">   └─ </span><span class="nm usr">RootCATrustedCertificates/</span><span class="mk dual">⇄ dual</span><span class="hint">user trust store</span><span class="exp">▸</span></button>
+    </div>
+
+    <div class="detail" id="detail">
+      <div class="dplaceholder">
+        <div class="dk">Detail</div>
+        <div class="dn" style="font-size:18px;color:#bccad6;margin-top:8px">Pick a CSP</div>
+        Tap any node in the tree for an example OMA-URI, its scope, and what it does.
+        <div class="tip">Dual rows appear twice — under Device and under User — on purpose. The CSP is the same; the prefix chooses the scope.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="deep">
+    <div class="deep-head">
+      <h2>Inside the Policy CSP</h2>
+      <span class="tagpill">⇄ dual-context</span>
+    </div>
+    <p class="deep-sub">The one CSP worth opening up — it holds thousands of settings as <code>Area/Policy</code> pairs. Two parallel branches mirror each other: one you write to, one you read from.</p>
+    <div class="deep-path"><span class="ctx">./Device</span><span>|</span><span class="ctx u">./User</span> / <span class="ven">Vendor/MSFT</span> / <span class="csp">Policy</span> / …</div>
+
+    <div class="branches">
+      <div class="branch config">
+        <div class="bk">Config/</div>
+        <div class="bt">write · enforce</div>
+        <div class="bd">The desired-value surface. A profile <code>Replace</code>s a policy here to enforce it. This is what you target.</div>
+      </div>
+      <div class="branch result">
+        <div class="bk">Result/</div>
+        <div class="bt">read · effective</div>
+        <div class="bd">A read-only mirror of the same Area/Policy structure, returning the value actually in effect. You <code>Get</code> from here to verify.</div>
+      </div>
+      <div class="branch ops">
+        <div class="bk">ConfigOperations/</div>
+        <div class="bt">extend</div>
+        <div class="bd"><code>ADMXInstall</code> ingests custom / third-party ADMX, so its settings become addressable as new Areas under Config &amp; Result.</div>
+      </div>
+    </div>
+
+    <div class="areas-label">Areas under Config/ &amp; Result/ — representative subset (there are dozens)</div>
+    <div class="areas" id="areas"></div>
+
+    <div class="area-detail" id="areaDetail">
+      <div class="area-ph">Tap an Area to see representative policies and the full OMA-URI — including how the same leaf reads back under <span style="color:#7fe0b8">Result/</span>.</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>Reading the tree:</b> the bare form <code>./Vendor/MSFT/…</code> resolves to device scope, so device-only CSPs carry no prefix. A <code>./Device</code> or <code>./User</code> prefix only appears (and only matters) on the <b>⇄ dual</b> CSPs. Context support shown is the common case — confirm a specific CSP in its reference doc, since a few have nodes in just one scope even within a dual provider.
+  </div>
+</div>
+
+<script>
+(function(){
+  var D={
+    devinfo:{n:"DevInfo",scope:[["std","standard node"],["read","read"]],
+      d:"Standard OMA-DM identity node — DevId, manufacturer, model, language. Sits at the root, not under Vendor/MSFT.",
+      path:[["","./"],["leaf","DevInfo/DevId"]],
+      note:"One of the few things addressed straight off ./ rather than through the vendor namespace."},
+    devdetail:{n:"DevDetail",scope:[["std","standard node"],["read","read"]],
+      d:"Extended device details. Microsoft’s additions live under Ext/Microsoft — device name, OS platform, processor, totals.",
+      path:[["","./"],["leaf","DevDetail/Ext/Microsoft/DeviceName"]],
+      note:"This is the node the session example Get’d to read the device name back."},
+    policy:{n:"Policy",scope:[["dual","⇄ dual · Device or User"]],
+      d:"The big one — thousands of settings expressed as Area/Policy pairs. Config/ to set a value, Result/ to read the applied state. Most ADMX-backed policies surface here too.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/Policy"],["leaf","/Config/Update/ManagePreviewBuilds"]],
+      note:"Dual-context: the same policy can mean different things at device vs user scope, which is exactly why the prefix exists."},
+    dmclient:{n:"DMClient",scope:[["dev","device only"]],
+      d:"Configures the enrollment itself — management server URLs, sync schedule, WNS push, provider state. No per-user variant exists.",
+      path:[["","./"],["ven","Vendor/MSFT"],["csp","/DMClient"],["leaf","/Provider/MS DM Server/FirstSyncStatus/SkipUserStatusPage"]],
+      note:"Device-only, so no context prefix. Note the leaf says “User” (the ESP user phase) — unrelated to the ./User context root."},
+    bitlocker:{n:"BitLocker",scope:[["dev","device only"]],
+      d:"Drive encryption enforcement, method per drive type, recovery and escrow behavior.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/BitLocker"],["leaf","/RequireDeviceEncryption"]],
+      note:""},
+    update:{n:"Update",scope:[["dev","device only"]],
+      d:"Windows Update for Business — deferrals, active hours, approvals and ring behavior.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/Update"],["leaf","/ApprovedUpdates/…"]],
+      note:""},
+    reboot:{n:"Reboot",scope:[["dev","device only"]],
+      d:"Schedule a one-off or recurring reboot, or trigger one now.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/Reboot"],["leaf","/Schedule/Single"]],
+      note:""},
+    defender:{n:"Defender",scope:[["dev","device only"]],
+      d:"Microsoft Defender antivirus / EDR configuration and on-demand actions.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/Defender"],["leaf","/Configuration/…"]],
+      note:""},
+    firewall:{n:"Firewall",scope:[["dev","device only"]],
+      d:"Defender Firewall profiles (domain/private/public) and individual rules via the MDM store.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/Firewall"],["leaf","/MdmStore/…"]],
+      note:""},
+    devicestatus:{n:"DeviceStatus",scope:[["read","read · reporting"],["dev","device"]],
+      d:"Read surface for compliance signals — encryption state, AV status, OS edition, secure boot. Mostly answered with Gets, and a feeder for compliance evaluation.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/DeviceStatus"],["leaf","/Compliance/…"]],
+      note:"This is the kind of node whose result ends up driving the Conditional Access decision."},
+    assignedaccess:{n:"AssignedAccess",scope:[["dev","device only"]],
+      d:"Kiosk and restricted-shell configuration — single-app or multi-app lockdown.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/AssignedAccess"],["leaf","/Configuration"]],
+      note:""},
+    licensing:{n:"WindowsLicensing",scope:[["dev","device only"]],
+      d:"Edition upgrades (e.g. Pro → Enterprise via subscription) and license/CheckApplicability actions.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/WindowsLicensing"],["leaf","/Edition / LicenseKeyType"]],
+      note:""},
+    wifi:{n:"Wifi",scope:[["dev","device only"]],
+      d:"Provision Wi-Fi profiles (SSID, auth, the XML WLAN profile blob).",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/Wifi"],["leaf","/Profile/{SSID}/WlanXml"]],
+      note:"Good example of a node whose Format is xml — the whole WLAN profile rides in one Data blob."},
+    emam:{n:"EnterpriseModernAppManagement",scope:[["dual","⇄ dual · Device or User"]],
+      d:"Install, inventory and remove modern apps — MSIX / Appx (UWP). Provisioning can be machine-wide or per-user.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/EnterpriseModernAppManagement"],["leaf","/AppManagement/…"]],
+      note:"Per-machine vs per-user app provisioning is the reason this one is dual."},
+    cci:{n:"ClientCertificateInstall",scope:[["dual","⇄ dual · Device or User"]],
+      d:"Deploy client certificates via SCEP or a PFX blob, into either the device or the user certificate store.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/ClientCertificateInstall"],["leaf","/SCEP/{id}/Install/…"]],
+      note:"Scope picks the cert store: ./Device → machine store, ./User → user store."},
+    passport:{n:"PassportForWork",scope:[["dual","⇄ dual · Device or User"]],
+      d:"Windows Hello for Business — tenant policy lives under the device side; per-user enrollment state under the user side.",
+      path:[["ctx","./Device"],["ven","/Vendor/MSFT"],["csp","/PassportForWork"],["leaf","/{TenantId}/Policies/…"]],
+      note:"A genuinely split provider: policy is device-scoped, enrollment is user-scoped."},
+    vpn:{n:"VPNv2",scope:[["dual","⇄ dual · Device or User"]],
+      d:"VPN profiles — connection type, routes, traffic filters, EAP. Deployable per device or per user.",
+      path:[["ctx","./User"],["ven","/Vendor/MSFT"],["csp","/VPNv2"],["leaf","/{ProfileName}/…"]],
+      note:"Device tunnels vs user tunnels are the two scopes here."},
+    rootca:{n:"RootCATrustedCertificates",scope:[["dual","⇄ dual · Device or User"]],
+      d:"Inject trusted root / intermediate / CA certificates into the appropriate trust store.",
+      path:[["ctx","./User"],["ven","/Vendor/MSFT"],["csp","/RootCATrustedCertificates"],["leaf","/Root/…"]],
+      note:"Like ClientCertificateInstall, the scope decides which trust store is written."}
+  };
+
+  function ctxClass(seg,kind){
+    // mark ./User in amber when present
+    if(kind==="ctx" && /User/.test(seg)) return "ctx u";
+    return kind;
+  }
+  function renderPath(parts){
+    return parts.map(function(p){
+      var cls=p[0]; if(!cls) return '<span>'+p[1]+'</span>';
+      if(cls==="ctx" && /User/.test(p[1])) return '<span class="ctx u">'+p[1]+'</span>';
+      return '<span class="'+cls+'">'+p[1]+'</span>';
+    }).join("");
+  }
+
+  var detail=document.getElementById("detail");
+  var rows=document.querySelectorAll(".row[data-k]");
+  function select(k,el){
+    var o=D[k]; if(!o) return;
+    rows.forEach(function(r){r.classList.toggle("sel", r===el);});
+    var scopes=o.scope.map(function(s){return '<span class="sc '+s[0]+'">'+s[1]+'</span>';}).join("");
+    detail.innerHTML=
+      '<div class="dk">Configuration service provider</div>'+
+      '<div class="dn">'+o.n+'</div>'+
+      '<div class="scoperow">'+scopes+'</div>'+
+      '<div class="dd">'+o.d+'</div>'+
+      '<div class="pathlabel">Example OMA-URI</div>'+
+      '<div class="pathbox">'+renderPath(o.path)+'</div>'+
+      (o.note?'<div class="dnote">'+o.note+'</div>':'');
+  }
+  rows.forEach(function(r){
+    r.addEventListener("click",function(){select(r.dataset.k,r);});
+  });
+})();
+
+(function(){
+  // Representative Policy areas → policies. Subset, accurate examples.
+  var AREAS={
+    System:{d:"Telemetry, diagnostics and core OS behavior.",pols:[
+      ["AllowTelemetry","Diagnostic data level sent to Microsoft (Security / Required / Optional).","System/AllowTelemetry"],
+      ["AllowLocation","Whether the device location service is permitted.","System/AllowLocation"]
+    ]},
+    Update:{d:"Windows Update for Business — deferrals, branch readiness, preview builds.",pols:[
+      ["ManagePreviewBuilds","Controls Windows Insider preview-build behavior — the policy behind the reboot example from earlier.","Update/ManagePreviewBuilds"],
+      ["DeferFeatureUpdatesPeriodInDays","Days to defer feature updates after release.","Update/DeferFeatureUpdatesPeriodInDays"]
+    ]},
+    DeviceLock:{d:"Password / PIN complexity and lock behavior.",pols:[
+      ["DevicePasswordEnabled","Require a device password at all.","DeviceLock/DevicePasswordEnabled"],
+      ["MinDevicePasswordLength","Minimum password length.","DeviceLock/MinDevicePasswordLength"]
+    ]},
+    Experience:{d:"OOBE, lock-screen, Spotlight and consumer-feature toggles.",pols:[
+      ["AllowCortana","Whether Cortana is permitted.","Experience/AllowCortana"],
+      ["AllowWindowsConsumerFeatures","Suppress consumer app suggestions / auto-installs.","Experience/AllowWindowsConsumerFeatures"]
+    ]},
+    Privacy:{d:"App permissions and cross-app privacy defaults.",pols:[
+      ["LetAppsAccessCamera","Default app access to the camera.","Privacy/LetAppsAccessCamera"],
+      ["AllowInputPersonalization","Cloud-based speech / inking personalization.","Privacy/AllowInputPersonalization"]
+    ]},
+    Defender:{d:"Microsoft Defender antivirus policy (the Policy-area surface, distinct from the Defender CSP).",pols:[
+      ["AllowRealtimeMonitoring","Enable real-time protection.","Defender/AllowRealtimeMonitoring"],
+      ["PUAProtection","Potentially-unwanted-application blocking mode.","Defender/PUAProtection"]
+    ]},
+    Authentication:{d:"Sign-in surfaces and credential providers.",pols:[
+      ["AllowFastReconnect","Fast reconnect for EAP-based auth.","Authentication/AllowFastReconnect"],
+      ["AllowAadPasswordReset","Permit self-service Entra password reset from the lock screen.","Authentication/AllowAadPasswordReset"]
+    ]},
+    Connectivity:{d:"Radios, Bluetooth, cellular and proximity features.",pols:[
+      ["AllowBluetooth","Permit the Bluetooth radio.","Connectivity/AllowBluetooth"],
+      ["AllowVPNOverCellular","Permit VPN connections over metered cellular.","Connectivity/AllowVPNOverCellular"]
+    ]},
+    Start:{d:"Start menu / taskbar layout and visibility.",pols:[
+      ["HideRecentlyAddedApps","Hide the recently-added apps list.","Start/HideRecentlyAddedApps"],
+      ["StartLayout","Apply a pinned-layout XML.","Start/StartLayout"]
+    ]},
+    Browser:{d:"Legacy Edge policy area (modern Edge ships via ingested ADMX).",pols:[
+      ["AllowAddressBarDropdown","Address-bar suggestion dropdown.","Browser/AllowAddressBarDropdown"],
+      ["HomePages","Configured home pages.","Browser/HomePages"]
+    ]}
+  };
+
+  function pathHTML(leaf,branch){
+    var b = branch==="Result" ? '<span class="br r">/Result</span>' : '<span class="br">/Config</span>';
+    return '<span class="ctx">./Device</span><span class="ven">/Vendor/MSFT</span><span class="csp">/Policy</span>'+b+'<span class="leaf">/'+leaf+'</span>';
+  }
+
+  var areasEl=document.getElementById("areas");
+  var areaDetail=document.getElementById("areaDetail");
+  var btns={};
+
+  function showArea(name){
+    var a=AREAS[name];
+    Object.keys(btns).forEach(function(k){btns[k].classList.toggle("sel",k===name);});
+    var pols=a.pols.map(function(p){
+      return '<div class="pol"><div class="pn">'+p[0]+'</div><div class="pd">'+p[1]+'</div>'+
+        '<div class="pp">'+pathHTML(p[2],"Config")+'</div>'+
+        '<div class="pp">'+pathHTML(p[2],"Result")+'  <span style="color:#5d7488">← read-back</span></div></div>';
+    }).join("");
+    areaDetail.innerHTML='<div class="an">'+name+'/</div><div class="ad">'+a.d+'</div><div class="pols">'+pols+'</div>';
+  }
+
+  Object.keys(AREAS).forEach(function(name){
+    var b=document.createElement("button");
+    b.className="area"; b.textContent=name+"/";
+    b.addEventListener("click",function(){showArea(name);});
+    btns[name]=b; areasEl.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

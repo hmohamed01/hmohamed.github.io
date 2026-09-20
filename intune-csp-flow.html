@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intune ↔ CSP — OMA-DM, SyncML &amp; Conditional Access</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#e9edf2; --panel:#ffffff; --ink:#14191f; --muted:#5b6b7b;
+    --hair:#c9d3dd; --hair-soft:#dde4ec;
+    --scope:#0e1822; --scope-grid:#1b2a39; --scope-edge:#21323f;
+    --down:#2563eb; --down-lit:#5b93ff;
+    --up:#c2701a; --up-lit:#f2a23a;
+    --ime:#7c4ddb; --ime-lit:#a983f0;
+    --ok:#1f9d6a; --ok-lit:#34c98a;
+    --block:#cf4233; --block-lit:#f06a5b;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans",system-ui,sans-serif;
+    line-height:1.55; padding:38px 22px 64px; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto}
+  code,.mono{font-family:"IBM Plex Mono",monospace}
+
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--muted); display:flex; gap:10px; align-items:center}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--muted);display:inline-block}
+  h1{font-family:"Space Grotesk",sans-serif; font-weight:700; font-size:clamp(28px,5vw,50px);
+    line-height:1.02; letter-spacing:-.02em; margin:.32em 0 .18em}
+  .sub{color:var(--muted); max-width:64ch; font-size:16px}
+  .sub b{color:var(--ink); font-weight:600}
+
+  /* mode switcher */
+  .modes{display:flex; gap:6px; margin:26px 0 0; padding:5px; background:var(--panel);
+    border:1px solid var(--hair); border-radius:12px; width:fit-content; max-width:100%; flex-wrap:wrap}
+  .modes button{font-family:"Space Grotesk",sans-serif; font-weight:600; font-size:14px;
+    border:none; background:transparent; color:var(--muted); padding:10px 16px; border-radius:8px;
+    cursor:pointer; display:flex; align-items:center; gap:8px; transition:background .18s,color .18s}
+  .modes button .ix{font-family:"IBM Plex Mono",monospace; font-size:11px; opacity:.6}
+  .modes button.on{background:var(--ink); color:#fff}
+  .modes button.on .ix{opacity:.7}
+
+  /* contextual controls */
+  .controls{display:flex; flex-wrap:wrap; gap:14px 18px; align-items:center; margin:14px 0 18px;
+    padding:14px 16px; background:var(--panel); border:1px solid var(--hair); border-radius:var(--r); min-height:64px}
+  .cgroup{display:none; gap:14px 18px; align-items:center; flex-wrap:wrap}
+  .cgroup.show{display:flex}
+  .run{font-family:"Space Grotesk",sans-serif; font-weight:600; font-size:15px; color:#fff;
+    background:var(--ink); border:none; border-radius:9px; padding:11px 20px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:9px; transition:transform .12s,background .2s}
+  .run:hover{background:#222d39}
+  .run:active{transform:translateY(1px)}
+  .run[disabled]{opacity:.5; cursor:default}
+  .run .dot{width:8px;height:8px;border-radius:50%;background:var(--down-lit);animation:beat 1.6s infinite}
+  @keyframes beat{0%{box-shadow:0 0 0 0 rgba(91,147,255,.5)}70%{box-shadow:0 0 0 7px rgba(91,147,255,0)}100%{box-shadow:0 0 0 0 rgba(91,147,255,0)}}
+  .seg{display:flex; gap:6px; background:#eef2f6; border:1px solid var(--hair-soft); border-radius:9px; padding:4px}
+  .seg button{font-family:"IBM Plex Mono",monospace; font-size:12.5px; border:none; background:transparent;
+    color:var(--muted); padding:7px 12px; border-radius:6px; cursor:pointer}
+  .seg button.on{background:#fff; color:var(--ink); box-shadow:0 1px 2px rgba(20,25,31,.12)}
+  .seg.state button.on[data-s="ok"]{color:var(--ok)}
+  .seg.state button.on[data-s="bad"]{color:var(--block)}
+  .ctl-label{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted)}
+
+  /* panels */
+  .panel{display:none}
+  .panel.show{display:block}
+
+  /* ===== SESSION ===== */
+  .diagram{display:grid; grid-template-columns:1fr 1.5fr 1fr; gap:0; align-items:stretch;
+    border:1px solid var(--hair); border-radius:var(--r); overflow:hidden; background:var(--panel)}
+  .tower{padding:20px 18px; display:flex; flex-direction:column; gap:12px}
+  .tower.right{border-left:1px solid var(--hair-soft)}
+  .node{border:1px solid var(--hair); border-radius:10px; padding:13px 14px; background:#fff;
+    transition:border-color .25s,box-shadow .25s; position:relative}
+  .node .tag{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:3px}
+  .node .name{font-family:"Space Grotesk",sans-serif; font-weight:600; font-size:15.5px}
+  .node .desc{font-size:12.5px; color:var(--muted); margin-top:3px}
+  .node.lit{border-color:var(--down); box-shadow:0 0 0 3px rgba(37,99,235,.13)}
+  .node.lit-up{border-color:var(--up); box-shadow:0 0 0 3px rgba(194,112,26,.15)}
+  .stamp{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--muted)}
+  .stamp i{width:7px;height:7px;border-radius:2px;display:inline-block}
+  .rack{display:flex; flex-wrap:wrap; gap:6px; margin-top:2px}
+  .chip{font-family:"IBM Plex Mono",monospace; font-size:11px; padding:4px 8px; border-radius:6px;
+    background:#eef2f6; border:1px solid var(--hair-soft); color:#33414f}
+  .chip.read{border-style:dashed}
+  .scope{background:var(--scope); position:relative; min-height:300px; padding:18px 8px;
+    display:flex; flex-direction:column; justify-content:center;
+    background-image:linear-gradient(var(--scope-grid) 1px,transparent 1px),linear-gradient(90deg,var(--scope-grid) 1px,transparent 1px);
+    background-size:26px 26px; border-left:1px solid var(--scope-edge); border-right:1px solid var(--scope-edge)}
+  .scope-head{position:absolute;top:12px;left:0;right:0;text-align:center;font-family:"IBM Plex Mono",monospace;
+    font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#5d7589}
+  .wire{position:relative; height:2px; background:linear-gradient(90deg,#26405a,#2f5070,#26405a); margin:8px 14px; border-radius:2px}
+  .pulse{position:absolute;top:50%;left:0;width:16px;height:16px;border-radius:50%;
+    transform:translate(-50%,-50%) scale(.6);opacity:0;background:var(--down-lit);
+    box-shadow:0 0 16px 4px rgba(91,147,255,.55);
+    transition:left 1s cubic-bezier(.4,0,.2,1),background .3s,box-shadow .3s,opacity .3s,transform .3s}
+  .pulse.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .pulse.up{background:var(--up-lit);box-shadow:0 0 16px 4px rgba(242,162,58,.55)}
+  .envelope{margin:14px 16px 0;min-height:74px;background:rgba(255,255,255,.03);border:1px solid var(--scope-edge);
+    border-radius:9px;padding:11px 13px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:#9fb3c4}
+  .envelope .vline{display:block;white-space:pre-wrap;word-break:break-all;opacity:0;transform:translateY(3px);
+    transition:opacity .3s,transform .3s}
+  .envelope .vline.show{opacity:1;transform:none}
+  .envelope .verb{color:var(--down-lit);font-weight:600}
+  .envelope .verb.get{color:var(--up-lit)}
+  .envelope .verb.status{color:var(--ok-lit)}
+  .envelope .loc{color:#cdd9e3}
+  .legend-dirs{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:22px;
+    font-family:"IBM Plex Mono",monospace;font-size:11px;color:#7c93a6}
+  .legend-dirs span{display:inline-flex;align-items:center;gap:7px}
+  .legend-dirs i{width:18px;height:3px;border-radius:2px;display:inline-block}
+  .narrate{display:flex;gap:14px;align-items:flex-start;margin:16px 2px 0;min-height:46px}
+  .step-no{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:13px;background:var(--ink);
+    color:#fff;border-radius:7px;padding:5px 10px;white-space:nowrap}
+  .narrate p{margin:3px 0 0;font-size:15px}
+  .narrate .lead{font-weight:600}
+  .narrate .mut{color:var(--muted)}
+
+  /* ===== ENVELOPE ===== */
+  .env-grid{display:grid; grid-template-columns:1.4fr 1fr; gap:18px}
+  .xmlbox{background:var(--scope); border:1px solid var(--scope-edge); border-radius:var(--r);
+    padding:18px 16px; overflow:auto;
+    background-image:linear-gradient(var(--scope-grid) 1px,transparent 1px),linear-gradient(90deg,var(--scope-grid) 1px,transparent 1px);
+    background-size:26px 26px}
+  .xmlbox pre{margin:0;font-family:"IBM Plex Mono",monospace;font-size:12.5px;line-height:1.85;color:#8aa0b2;white-space:pre}
+  .tok{cursor:pointer;border-radius:4px;padding:1px 3px;transition:background .15s,color .15s}
+  .tok:hover{background:rgba(255,255,255,.07);color:#dce6ee}
+  .tok.active{background:rgba(91,147,255,.22);color:#eaf1f8;box-shadow:inset 0 0 0 1px rgba(91,147,255,.5)}
+  .t-tag{color:#5f93ff}
+  .t-verb{color:#5f93ff;font-weight:600}
+  .t-status{color:var(--ok-lit);font-weight:600}
+  .t-val{color:#e6edf3}
+  .t-loc{color:#c9d6e0}
+  .t-final{color:#7f93a6}
+  .env-side{background:var(--panel); border:1px solid var(--hair); border-radius:var(--r); padding:18px; display:flex; flex-direction:column}
+  .env-side h3{font-family:"Space Grotesk",sans-serif;font-size:13px;letter-spacing:.04em;text-transform:uppercase;
+    margin:0 0 4px;color:var(--muted);font-weight:600}
+  .env-hint{font-size:13px;color:var(--muted);margin:0 0 14px}
+  .env-detail{flex:1;border-top:1px solid var(--hair-soft);padding-top:14px}
+  .env-detail .dt{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:14px;color:var(--down)}
+  .env-detail .dd{font-size:14px;color:#3a4855;margin-top:7px}
+  .env-detail .dnote{font-size:12.5px;color:var(--muted);margin-top:12px;padding-top:11px;border-top:1px dashed var(--hair)}
+  .flip{margin-top:14px;font-size:12.5px;color:var(--muted);background:#f4f7fa;border:1px solid var(--hair-soft);
+    border-radius:9px;padding:11px 12px}
+  .flip b{color:var(--ink)}
+
+  /* ===== CONDITIONAL ACCESS ===== */
+  .ca-pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--hair);
+    border-radius:var(--r);overflow:hidden;background:var(--panel)}
+  .ca-stage{padding:18px 14px;border-right:1px solid var(--hair-soft);position:relative;transition:background .25s}
+  .ca-stage:last-child{border-right:none}
+  .ca-stage .sx{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted)}
+  .ca-stage .st{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:14.5px;margin-top:5px;line-height:1.25}
+  .ca-stage .sd{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .ca-stage .sprop{font-family:"IBM Plex Mono",monospace;font-size:11.5px;margin-top:9px;padding:6px 8px;
+    border-radius:6px;background:#eef2f6;border:1px solid var(--hair-soft);color:#33414f;display:inline-block}
+  .ca-stage.active{background:#f1f6ff}
+  .ca-stage.active.bad{background:#fdf2f1}
+  .ca-stage.active .st{color:var(--down)}
+  .ca-stage.active.bad .st{color:var(--block)}
+  .ca-zone{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:#8fa0b0;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .ca-zone i{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .ca-outcome{margin-top:18px;border-radius:var(--r);padding:22px 24px;border:1px solid var(--hair);
+    background:var(--panel);display:flex;align-items:center;gap:20px;min-height:96px;transition:all .3s}
+  .ca-outcome.grant{background:#eefaf4;border-color:#bfe8d5}
+  .ca-outcome.block{background:#fdf0ee;border-color:#f3cbc4}
+  .ca-badge{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:15px;letter-spacing:.04em;
+    text-transform:uppercase;color:#fff;border-radius:10px;padding:14px 18px;white-space:nowrap}
+  .ca-outcome.grant .ca-badge{background:var(--ok)}
+  .ca-outcome.block .ca-badge{background:var(--block)}
+  .ca-outcome.idle .ca-badge{background:#aab6c2}
+  .ca-outcome .ot{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:17px}
+  .ca-outcome .od{font-size:13.5px;color:#42505c;margin-top:3px;max-width:60ch}
+  .ca-foot{font-size:12.5px;color:var(--muted);margin-top:14px;padding:13px 15px;background:var(--panel);
+    border:1px solid var(--hair);border-radius:var(--r);border-left:3px solid var(--down)}
+  .ca-foot b{color:var(--ink)}
+
+  /* shared cards */
+  .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-top:30px}
+  .card{background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);padding:20px}
+  .card h2{font-family:"Space Grotesk",sans-serif;font-size:13px;letter-spacing:.04em;text-transform:uppercase;
+    margin:0 0 4px;color:var(--muted);font-weight:600}
+  .card .lede{font-size:13.5px;color:var(--muted);margin:0 0 14px}
+  .verbs{display:flex;flex-wrap:wrap;gap:8px}
+  .verb-btn{font-family:"IBM Plex Mono",monospace;font-size:13px;border:1px solid var(--hair);background:#fff;
+    border-radius:8px;padding:8px 13px;cursor:pointer;transition:border-color .15s,transform .1s;display:flex;align-items:center;gap:7px}
+  .verb-btn i{width:7px;height:7px;border-radius:50%}
+  .verb-btn:hover{transform:translateY(-1px)}
+  .verb-btn.sel{border-color:var(--ink);background:#f4f7fa}
+  .vdetail{margin-top:14px;padding:13px 14px;border-radius:9px;background:#f4f7fa;border:1px solid var(--hair-soft);min-height:70px}
+  .vdetail .vt{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:14px}
+  .vdetail .vd{font-size:13.5px;color:#3a4855;margin-top:5px}
+  .vdetail .vdir{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-top:9px;color:var(--muted)}
+  .ime-flag{display:inline-flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--ime);border:1px solid #ddd0f4;background:#f6f2fd;
+    border-radius:6px;padding:4px 9px;margin-bottom:12px}
+  .ime-list{margin:0;padding:0;list-style:none;font-size:14px}
+  .ime-list li{padding:9px 0;border-bottom:1px solid var(--hair-soft);display:flex;gap:10px;align-items:baseline}
+  .ime-list li:last-child{border-bottom:none}
+  .ime-list .k{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ime);min-width:88px}
+  .ime-note{font-size:12.5px;color:var(--muted);margin-top:12px;padding-top:12px;border-top:1px dashed var(--hair)}
+
+  .cross{margin-top:30px;background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);padding:20px 22px}
+  .cross h2{font-family:"Space Grotesk",sans-serif;font-size:13px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 14px;color:var(--muted);font-weight:600}
+  .xrow{display:grid;grid-template-columns:1fr 26px 1fr;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--hair-soft);font-size:14px}
+  .xrow:first-of-type{border-top:none}
+  .xrow .arrow{color:var(--hair);text-align:center;font-family:"IBM Plex Mono",monospace}
+  .xrow .cloud{font-weight:600}
+  .xrow .prem{color:var(--muted)}
+  .xrow .mono{font-size:12.5px}
+  footer{margin-top:34px;font-size:12px;color:var(--muted);font-family:"IBM Plex Mono",monospace;letter-spacing:.03em;text-align:center}
+
+  @media(max-width:860px){
+    .diagram{grid-template-columns:1fr}
+    .tower.right{border-left:none;border-top:1px solid var(--hair-soft)}
+    .scope{border-left:none;border-right:none;border-top:1px solid var(--scope-edge);border-bottom:1px solid var(--scope-edge)}
+    .env-grid{grid-template-columns:1fr}
+    .ca-pipe{grid-template-columns:1fr;}
+    .ca-stage{border-right:none;border-bottom:1px solid var(--hair-soft)}
+    .ca-stage:last-child{border-bottom:none}
+    .grid2{grid-template-columns:1fr}
+    .xrow{grid-template-columns:1fr;gap:2px}
+    .xrow .arrow{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .pulse{transition:opacity .01s,background .01s}.run .dot{animation:none}
+    .envelope .vline{transition:opacity .01s}.ca-stage,.ca-outcome{transition:none}
+  }
+  :focus-visible{outline:2.5px solid var(--down);outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">OMA-DM · SyncML over HTTPS · Entra Conditional Access</div>
+  <h1>Intune, the CSP gateway,<br>and the access decision</h1>
+  <p class="sub">Three views of one chain. <b>Session</b>: how a sync runs. <b>SyncML envelope</b>: what a single command actually looks like on the wire. <b>Conditional Access</b>: how a compliance <code>Get</code> ends up granting or blocking access — in Entra, not on the device.</p>
+
+  <div class="modes" id="modes">
+    <button data-mode="session" class="on"><span class="ix">01</span>Session</button>
+    <button data-mode="envelope"><span class="ix">02</span>SyncML envelope</button>
+    <button data-mode="ca"><span class="ix">03</span>Conditional Access</button>
+  </div>
+
+  <div class="controls">
+    <!-- session controls -->
+    <div class="cgroup show" data-for="session">
+      <button class="run" id="run"><span class="dot"></span>Run a sync session</button>
+      <span class="ctl-label">Trigger</span>
+      <div class="seg" id="trig">
+        <button data-t="poll" class="on">Scheduled poll</button>
+        <button data-t="push">WNS push</button>
+      </div>
+    </div>
+    <!-- envelope controls -->
+    <div class="cgroup" data-for="envelope">
+      <span class="ctl-label">Show</span>
+      <div class="seg" id="envseg">
+        <button data-e="replace" class="on">Server → device · Replace</button>
+        <button data-e="status">Device → server · Status</button>
+      </div>
+      <span class="ctl-label" style="opacity:.8">Tap any element</span>
+    </div>
+    <!-- ca controls -->
+    <div class="cgroup" data-for="ca">
+      <button class="run" id="carun"><span class="dot"></span>Run the access decision</button>
+      <span class="ctl-label">Device is</span>
+      <div class="seg state" id="castate">
+        <button data-s="ok" class="on">Compliant</button>
+        <button data-s="bad">Noncompliant</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SESSION ===================== -->
+  <div class="panel show" data-panel="session">
+    <div class="diagram">
+      <div class="tower left">
+        <div class="node" id="n-intune"><div class="tag">Cloud service</div><div class="name">Microsoft Intune</div>
+          <div class="desc">OMA-DM server. Queues each setting as an OMA-URI node operation.</div></div>
+        <div class="node" id="n-wns"><div class="tag">Wake signal</div><div class="name">WNS push</div>
+          <div class="desc">Unsolicited “check in now” → fires the device’s PushLaunch task. Optional.</div></div>
+        <div class="stamp"><i style="background:var(--down)"></i>downstream = configuration / commands</div>
+      </div>
+      <div class="scope">
+        <div class="scope-head">Session channel · TLS · enrollment cert</div>
+        <div class="wire"><div class="pulse" id="pulse"></div></div>
+        <div class="envelope" id="env">
+          <span class="vline" id="v1"></span><span class="vline" id="v2"></span><span class="vline" id="v3"></span>
+        </div>
+        <div class="legend-dirs">
+          <span><i style="background:var(--down-lit)"></i>config ▸</span>
+          <span><i style="background:var(--up-lit)"></i>◂ status / data</span>
+        </div>
+      </div>
+      <div class="tower right">
+        <div class="node" id="n-client"><div class="tag">On the endpoint</div><div class="name">MDM client (OMA-DM agent)</div>
+          <div class="desc">Authenticates with the enrollment cert, parses SyncML, dispatches each verb by OMA-URI.</div></div>
+        <div class="node" id="n-csp"><div class="tag">The gateway · both directions</div><div class="name">Configuration Service Providers</div>
+          <div class="desc">Each CSP owns a branch of the tree and translates node ops into real OS work.</div>
+          <div class="rack"><span class="chip">Policy</span><span class="chip">DMClient</span><span class="chip">BitLocker</span>
+            <span class="chip read">DevDetail</span><span class="chip read">DeviceStatus</span></div></div>
+        <div class="node" id="n-os"><div class="tag">Effect</div><div class="name">OS action + Status code</div>
+          <div class="desc">Registry / API / enforcement happens, then a Status (200 / error) returns upstream.</div></div>
+      </div>
+    </div>
+    <div class="narrate">
+      <span class="step-no" id="stepno">IDLE</span>
+      <p id="narr"><span class="lead">Press “Run a sync session.”</span> <span class="mut">Watch one OMA-DM session move config down and status back up.</span></p>
+    </div>
+  </div>
+
+  <!-- ===================== ENVELOPE ===================== -->
+  <div class="panel" data-panel="envelope">
+    <div class="env-grid">
+      <div class="xmlbox"><pre id="xml"></pre></div>
+      <div class="env-side">
+        <h3 id="env-title">The SyncML envelope</h3>
+        <p class="env-hint" id="env-hint">A CSP setting doesn’t travel as “a setting” — it travels as this. Tap any highlighted element to see its job.</p>
+        <div class="env-detail" id="env-detail">
+          <div class="dt">Pick an element</div>
+          <div class="dd">The same nesting wraps every command: a header that routes the session, then a body of verbs, each pointing at a node by its <code>LocURI</code>.</div>
+        </div>
+        <div class="flip" id="env-flip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== CONDITIONAL ACCESS ===================== -->
+  <div class="panel" data-panel="ca">
+    <div class="ca-pipe" id="capipe">
+      <div class="ca-stage" data-stage="0">
+        <div class="ca-zone"><i style="background:var(--up)"></i>device · Intune</div>
+        <div class="sx">01</div><div class="st">State collected</div>
+        <div class="sd">A compliance <code>Get</code> + reported inventory reach Intune.</div>
+        <div class="sprop">Get → ./DeviceStatus/…</div>
+      </div>
+      <div class="ca-stage" data-stage="1">
+        <div class="ca-zone"><i style="background:var(--down)"></i>Intune</div>
+        <div class="sx">02</div><div class="st">Policy evaluated</div>
+        <div class="sd">Intune judges the device against the assigned compliance policy.</div>
+        <div class="sprop" id="ca-verdict">verdict = …</div>
+      </div>
+      <div class="ca-stage" data-stage="2">
+        <div class="ca-zone"><i style="background:var(--down)"></i>Intune → Entra</div>
+        <div class="sx">03</div><div class="st">Written to directory</div>
+        <div class="sd">The verdict is stamped onto the Entra <b>device</b> object. This is the hand-off.</div>
+        <div class="sprop" id="ca-prop">device.isCompliant = …</div>
+      </div>
+      <div class="ca-stage" data-stage="3">
+        <div class="ca-zone"><i style="background:var(--ime)"></i>Entra · sign-in</div>
+        <div class="sx">04</div><div class="st">User signs in</div>
+        <div class="sd">A token request for a protected app hits Entra. The <b>PRT</b> identifies the device.</div>
+        <div class="sprop">token request + PRT</div>
+      </div>
+      <div class="ca-stage" data-stage="4">
+        <div class="ca-zone"><i style="background:var(--ime)"></i>Entra · CA engine</div>
+        <div class="sx">05</div><div class="st">CA evaluates</div>
+        <div class="sd">Grant control reads the device’s directory state.</div>
+        <div class="sprop">Require compliant device</div>
+      </div>
+    </div>
+
+    <div class="ca-outcome idle" id="ca-outcome">
+      <div class="ca-badge" id="ca-badge">Awaiting</div>
+      <div><div class="ot" id="ca-ot">Set a device state and run the decision.</div>
+        <div class="od" id="ca-od">Toggle Compliant / Noncompliant to see both branches. CA evaluates at token issuance, inside Entra.</div></div>
+    </div>
+
+    <div class="ca-foot">
+      <b>The seam:</b> Intune is the compliance authority, but the gate lives in Entra. Intune writes <code>isCompliant</code> onto the Entra device object; Conditional Access reads that property at sign-in. So a freshly-fixed device stays blocked until Intune re-evaluates and the directory state syncs. (Hybrid-join CA uses device <i>join</i> state instead of Intune compliance.)
+    </div>
+  </div>
+
+  <!-- shared reference -->
+  <div class="grid2">
+    <div class="card">
+      <h2>OMA-DM verbs in the envelope</h2>
+      <p class="lede">What the server can ask the client to do. Color shows which way data moves.</p>
+      <div class="verbs" id="verbs"></div>
+      <div class="vdetail" id="vdetail">
+        <div class="vt">Select a verb</div>
+        <div class="vd">Each SyncML command targets a node by its <code>&lt;LocURI&gt;</code> and is handled by that node’s CSP.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>The carve-out</h2>
+      <span class="ime-flag"><i style="width:7px;height:7px;border-radius:50%;background:var(--ime);display:inline-block"></i>not OMA-DM</span>
+      <ul class="ime-list">
+        <li><span class="k">IME / SideCar</span><span>Intune Management Extension — its own HTTPS <b>pull</b> agent.</span></li>
+        <li><span class="k">Win32 apps</span><span>.intunewin packages install through IME, not a CSP.</span></li>
+        <li><span class="k">Scripts</span><span>PowerShell + proactive remediations run here too.</span></li>
+      </ul>
+      <p class="ime-note">Rule of thumb: <b>profiles, compliance, most settings → CSP / OMA-DM.</b> <b>Apps + scripts → IME.</b></p>
+    </div>
+  </div>
+
+  <div class="cross">
+    <h2>On-prem crosswalk</h2>
+    <div class="xrow"><span class="cloud">OMA-DM session <span class="mono">(poll cadence)</span></span><span class="arrow">≈</span><span class="prem">Group Policy background refresh interval</span></div>
+    <div class="xrow"><span class="cloud">CSP</span><span class="arrow">≈</span><span class="prem">Client-side extension (CSE) that applies a policy</span></div>
+    <div class="xrow"><span class="cloud">OMA-URI <span class="mono">(LocURI)</span></span><span class="arrow">≈</span><span class="prem">The registry / policy path a GPO writes</span></div>
+    <div class="xrow"><span class="cloud">MDM enrollment cert</span><span class="arrow">≈</span><span class="prem">Domain membership — trust that authorizes the channel</span></div>
+    <div class="xrow"><span class="cloud">Entra device object <span class="mono">(isCompliant)</span></span><span class="arrow">≈</span><span class="prem">The AD DS computer object + its health attributes</span></div>
+    <div class="xrow"><span class="cloud">Conditional Access <span class="mono">(require compliant)</span></span><span class="arrow">≈</span><span class="prem">NPS / NAC posture check gating network access</span></div>
+  </div>
+
+  <footer>Built for reference · SyncML structure simplified; verbs, CSPs and codes illustrate the real flow</footer>
+</div>
+
+<script>
+(function(){
+  /* ---------- timer registry so mode switches don't leave animations running ---------- */
+  var timers=[];
+  function later(fn,ms){var id=setTimeout(fn,ms);timers.push(id);return id;}
+  function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+
+  /* ---------- mode switching ---------- */
+  var modes=document.getElementById("modes");
+  var panels=document.querySelectorAll(".panel");
+  var cgroups=document.querySelectorAll(".cgroup");
+  modes.addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b) return;
+    clearTimers(); resetSession(); resetCA();
+    [].forEach.call(modes.children,function(c){c.classList.toggle("on",c===b);});
+    var m=b.dataset.mode;
+    panels.forEach(function(p){p.classList.toggle("show",p.dataset.panel===m);});
+    cgroups.forEach(function(g){g.classList.toggle("show",g.dataset.for===m);});
+  });
+
+  /* ================= SESSION ================= */
+  var trigger="poll", running=false;
+  var trig=document.getElementById("trig");
+  trig.addEventListener("click",function(e){var b=e.target.closest("button");if(!b||running)return;
+    trigger=b.dataset.t;[].forEach.call(trig.children,function(c){c.classList.toggle("on",c===b);});});
+
+  var pulse=document.getElementById("pulse"), env=document.getElementById("env");
+  var vlines=[document.getElementById("v1"),document.getElementById("v2"),document.getElementById("v3")];
+  var stepno=document.getElementById("stepno"), narr=document.getElementById("narr"), runBtn=document.getElementById("run");
+  var sids=["n-intune","n-wns","n-client","n-csp","n-os"];
+  function clearLit(){sids.forEach(function(i){var n=document.getElementById(i);if(n)n.classList.remove("lit","lit-up");});}
+  function lit(id,k){var n=document.getElementById(id);if(n)n.classList.add(k==="up"?"lit-up":"lit");}
+  function setPulse(p,d){pulse.classList.add("show");pulse.classList.toggle("up",d==="up");pulse.style.left=p+"%";}
+  function showLines(arr){vlines.forEach(function(v){v.classList.remove("show");v.className="vline";});
+    arr.forEach(function(it,i){if(!vlines[i])return;vlines[i].innerHTML=it.html;vlines[i].className="vline";
+      later(function(){vlines[i].classList.add("show");},120+i*120);});}
+  function narrate(no,lead,rest){stepno.textContent=no;narr.innerHTML='<span class="lead">'+lead+'</span> <span class="mut">'+rest+'</span>';}
+  function resetSession(){running=false;if(runBtn){runBtn.disabled=false;}clearLit();
+    if(pulse){pulse.classList.remove("show");}if(stepno){stepno.textContent="IDLE";}
+    if(narr){narr.innerHTML='<span class="lead">Press “Run a sync session.”</span> <span class="mut">Watch one OMA-DM session move config down and status back up.</span>';}
+    vlines.forEach(function(v){v.classList.remove("show");});}
+
+  function buildSteps(){
+    var s=[];
+    if(trigger==="push"){s.push({no:"01",lit:["n-wns","down"],pos:[2,"down"],lead:"WNS push wakes the device.",
+      rest:"Intune sends a notification through the Windows Push Notification Service; the PushLaunch task fires.",
+      lines:[{html:'<span class="verb">PUSH</span> <span class="loc">→ wake &amp; start session</span>'}]});}
+    else{s.push({no:"01",lit:["n-client","down"],pos:[98,"down"],lead:"Poll cadence reached.",
+      rest:"The DMClient schedule fires on the device (≈8h steady-state). The device initiates — no push needed.",
+      lines:[{html:'<span class="verb status">TIMER</span> <span class="loc">DMClient poll → open session</span>'}]});}
+    s.push({no:"02",lit:["n-client","up"],pos:[50,"up"],lead:"Device dials out over HTTPS.",
+      rest:"The MDM client opens a mutually-authenticated TLS session and proves identity with the enrollment cert.",
+      lines:[{html:'<span class="verb status">TLS</span> <span class="loc">client → server · enrollment cert</span>'}]});
+    s.push({no:"03",lit:["n-intune","down"],pos:[8,"down"],lead:"Server sends the SyncML package.",
+      rest:"Intune emits queued node ops — config as Replace, plus a Get to read state back.",
+      lines:[{html:'<span class="verb">Replace</span> <span class="loc">./Vendor/MSFT/Policy/Config/Update/…</span>'},
+             {html:'<span class="verb get">Get</span> <span class="loc">./DevDetail/Ext/Microsoft/DeviceName</span>'}]});
+    s.push({no:"04",lit:["n-client","down"],pos:[88,"down"],lead:"MDM client routes each verb.",
+      rest:"It parses the envelope and dispatches every command to the CSP that owns that OMA-URI.",
+      lines:[{html:'<span class="verb">Replace</span> <span class="loc">→ Policy CSP</span>'},
+             {html:'<span class="verb get">Get</span> <span class="loc">→ DevDetail CSP</span>'}]});
+    s.push({no:"05",lit:["n-csp","down"],pos:[92,"down"],lead:"CSPs do the real work.",
+      rest:"Policy CSP enforces the setting; DevDetail returns the requested value.",
+      lines:[{html:'<span class="verb">Policy</span> <span class="loc">enforce → write</span>'},
+             {html:'<span class="verb get">DevDetail</span> <span class="loc">read → value</span>'}]});
+    s.push({no:"06",lit:["n-os","up"],pos:[50,"up"],lead:"OS acts; status returns upstream.",
+      rest:"Each CSP hands back a Status / Results code, packaged into SyncML and sent back.",
+      lines:[{html:'<span class="verb status">Status 200</span> <span class="loc">Replace OK</span>'},
+             {html:'<span class="verb get">Results</span> <span class="loc">device name = …</span>'}]});
+    s.push({no:"07",lit:["n-intune","up"],pos:[3,"up"],lead:"Intune records the result.",
+      rest:"Per-setting Succeeded / Error lands in the profile’s device status. Session closes.",
+      lines:[{html:'<span class="verb status">✓ Succeeded</span> <span class="loc">profile · device status updated</span>'}]});
+    return s;
+  }
+  function runStep(steps,i){
+    if(i>=steps.length){later(function(){pulse.classList.remove("show");clearLit();stepno.textContent="DONE";
+      narr.innerHTML='<span class="lead">Session complete.</span> <span class="mut">Config down, status up — all through CSPs. Run again or switch the trigger.</span>';
+      running=false;runBtn.disabled=false;},1100);return;}
+    var st=steps[i];clearLit();lit(st.lit[0],st.lit[1]);setPulse(st.pos[0],st.pos[1]);showLines(st.lines);narrate(st.no,st.lead,st.rest);
+    later(function(){runStep(steps,i+1);},1700);
+  }
+  runBtn.addEventListener("click",function(){if(running)return;running=true;runBtn.disabled=true;runStep(buildSteps(),0);});
+
+  /* ================= ENVELOPE ================= */
+  var XML={
+    replace:[
+      '<span class="t-tag">&lt;SyncML</span> xmlns="SYNCML:SYNCML1.2"<span class="t-tag">&gt;</span>',
+      '  <span class="tok t-tag" data-k="synchdr">&lt;SyncHdr&gt;</span>',
+      '    <span class="tok t-tag" data-k="verproto">&lt;VerProto&gt;</span>DM/1.2<span class="t-tag">&lt;/VerProto&gt;</span>',
+      '    <span class="tok t-tag" data-k="sessionid">&lt;SessionID&gt;</span>1<span class="t-tag">&lt;/SessionID&gt;</span>',
+      '    <span class="tok t-tag" data-k="msgid">&lt;MsgID&gt;</span>2<span class="t-tag">&lt;/MsgID&gt;</span>',
+      '    <span class="tok t-tag" data-k="hdrtarget">&lt;Target&gt;&lt;LocURI&gt;</span><span class="t-val">{DeviceClientID}</span><span class="t-tag">&lt;/LocURI&gt;&lt;/Target&gt;</span>',
+      '    <span class="tok t-tag" data-k="source">&lt;Source&gt;&lt;LocURI&gt;</span><span class="t-val">https://…manage.microsoft.com/omadm</span><span class="t-tag">&lt;/LocURI&gt;&lt;/Source&gt;</span>',
+      '  <span class="t-tag">&lt;/SyncHdr&gt;</span>',
+      '  <span class="tok t-tag" data-k="syncbody">&lt;SyncBody&gt;</span>',
+      '    <span class="tok t-verb" data-k="replace">&lt;Replace&gt;</span>',
+      '      <span class="tok t-tag" data-k="cmdid">&lt;CmdID&gt;</span>3<span class="t-tag">&lt;/CmdID&gt;</span>',
+      '      <span class="tok t-tag" data-k="item">&lt;Item&gt;</span>',
+      '        <span class="t-tag">&lt;Target&gt;</span>',
+      '          <span class="tok t-loc" data-k="itemtarget">&lt;LocURI&gt;./Vendor/MSFT/Policy/Config/Update/ManagePreviewBuilds&lt;/LocURI&gt;</span>',
+      '        <span class="t-tag">&lt;/Target&gt;</span>',
+      '        <span class="t-tag">&lt;Meta&gt;</span>',
+      '          <span class="tok t-tag" data-k="format">&lt;Format xmlns="syncml:metinf"&gt;int&lt;/Format&gt;</span>',
+      '        <span class="t-tag">&lt;/Meta&gt;</span>',
+      '        <span class="tok t-tag" data-k="data">&lt;Data&gt;</span><span class="t-val">1</span><span class="t-tag">&lt;/Data&gt;</span>',
+      '      <span class="t-tag">&lt;/Item&gt;</span>',
+      '    <span class="t-verb">&lt;/Replace&gt;</span>',
+      '    <span class="tok t-final" data-k="final">&lt;Final/&gt;</span>',
+      '  <span class="t-tag">&lt;/SyncBody&gt;</span>',
+      '<span class="t-tag">&lt;/SyncML&gt;</span>'
+    ],
+    status:[
+      '<span class="t-tag">&lt;SyncML</span> xmlns="SYNCML:SYNCML1.2"<span class="t-tag">&gt;</span>',
+      '  <span class="t-tag">&lt;SyncHdr&gt;</span>',
+      '    <span class="t-tag">&lt;VerProto&gt;</span>DM/1.2<span class="t-tag">&lt;/VerProto&gt;</span>',
+      '    <span class="t-tag">&lt;SessionID&gt;</span>1<span class="t-tag">&lt;/SessionID&gt;</span>',
+      '    <span class="t-tag">&lt;MsgID&gt;</span>2<span class="t-tag">&lt;/MsgID&gt;</span>',
+      '    <span class="tok t-tag" data-k="flip-target">&lt;Target&gt;&lt;LocURI&gt;</span><span class="t-val">https://…manage.microsoft.com/omadm</span><span class="t-tag">&lt;/LocURI&gt;&lt;/Target&gt;</span>',
+      '    <span class="tok t-tag" data-k="flip-source">&lt;Source&gt;&lt;LocURI&gt;</span><span class="t-val">{DeviceClientID}</span><span class="t-tag">&lt;/LocURI&gt;&lt;/Source&gt;</span>',
+      '  <span class="t-tag">&lt;/SyncHdr&gt;</span>',
+      '  <span class="t-tag">&lt;SyncBody&gt;</span>',
+      '    <span class="tok t-status" data-k="status">&lt;Status&gt;</span>',
+      '      <span class="t-tag">&lt;CmdID&gt;</span>1<span class="t-tag">&lt;/CmdID&gt;</span>',
+      '      <span class="tok t-tag" data-k="msgref">&lt;MsgRef&gt;</span>2<span class="t-tag">&lt;/MsgRef&gt;</span>',
+      '      <span class="tok t-tag" data-k="cmdref">&lt;CmdRef&gt;</span>3<span class="t-tag">&lt;/CmdRef&gt;</span>',
+      '      <span class="tok t-tag" data-k="cmd">&lt;Cmd&gt;</span>Replace<span class="t-tag">&lt;/Cmd&gt;</span>',
+      '      <span class="tok t-status" data-k="statusdata">&lt;Data&gt;200&lt;/Data&gt;</span>',
+      '    <span class="t-status">&lt;/Status&gt;</span>',
+      '    <span class="t-final">&lt;Final/&gt;</span>',
+      '  <span class="t-tag">&lt;/SyncBody&gt;</span>',
+      '<span class="t-tag">&lt;/SyncML&gt;</span>'
+    ]
+  };
+  var EXP={
+    synchdr:["SyncHdr","Session + routing metadata. Tells the receiver which protocol and session this is, and who it’s to and from.","Wraps everything before the payload."],
+    verproto:["VerProto","The protocol and version — OMA DM 1.2. (VerDTD names the SyncML grammar version, also 1.2.)",""],
+    sessionid:["SessionID","Identifies the whole management session. Constant across every back-and-forth message until the session ends.",""],
+    msgid:["MsgID","Increments per message within the session. The device’s Status points back to it via MsgRef.",""],
+    hdrtarget:["Target / LocURI (header)","Who the message is FOR. Server→device this is the device’s client ID — and it flips to the server URL in the reply.","Don’t confuse with the Item’s LocURI below — that one is the CSP node."],
+    source:["Source / LocURI","Who the message is FROM. Here, the Intune OMA-DM endpoint URL.",""],
+    syncbody:["SyncBody","The payload: one or more command verbs to run, terminated by <Final/>.",""],
+    replace:["Replace (verb)","Set the value of an existing node. Most config delivery compiles down to a Replace.","server → device · configuration"],
+    cmdid:["CmdID","Unique ID for this command inside the message. The Status echoes it back as CmdRef so the server can match the reply.",""],
+    item:["Item","One operand of the command: the node to act on, its declared format, and the value.",""],
+    itemtarget:["Target / LocURI (item) — the OMA-URI","THIS is the OMA-URI: the exact node in the CSP management tree being written. Everything you type into a custom profile becomes this string.","Routed to the Policy CSP here."],
+    format:["Meta / Format","The data type, from the syncml:metinf namespace: int / bool / chr (string) / b64 / node / xml. Must match what the CSP’s DDF declares for the node.",""],
+    data:["Data","The value being written (1). How it’s read is governed by Format.",""],
+    final:["Final","Marks the last message of this package — the receiver knows the turn is complete.",""],
+    status:["Status","The device’s reply for one command. Carries the result code and references exactly which command it answers.","device → server · result"],
+    msgref:["MsgRef","Points back to the MsgID being answered (2).",""],
+    cmdref:["CmdRef","Points back to the CmdID of the command being answered — the Replace’s CmdID 3.",""],
+    cmd:["Cmd","Names the verb this Status is for (Replace), so the match is unambiguous.",""],
+    statusdata:["Data — the result code","OMA-DM status: 200 OK. Others you’ll meet: 202 accepted, 401 unauthorized, 404 not found, 415 bad format, 500 failed. This is what becomes Succeeded / Error in the portal.","device → server · status"],
+    "flip-target":["Target flipped","In the reply, Target is now the server URL — the response is addressed back to Intune.","Compare with the request, where Target was the device."],
+    "flip-source":["Source flipped","And Source is now the device’s client ID. Target/Source swap with direction.",""]
+  };
+  var FLIP={
+    replace:'<b>Heads-up:</b> the header’s <code>Target</code> is the device and <code>Source</code> is the server. Switch to the Status view to watch them swap.',
+    status:'<b>Note the flip:</b> <code>Target</code> is now the server and <code>Source</code> is the device — the reply is addressed back to Intune. <code>MsgRef</code> + <code>CmdRef</code> tie it to the exact command.'
+  };
+  var xmlEl=document.getElementById("xml"), envDetail=document.getElementById("env-detail"),
+      envFlip=document.getElementById("env-flip"), envTitle=document.getElementById("env-title"),
+      envHint=document.getElementById("env-hint");
+  var curEnv="replace";
+  function renderXML(which){
+    curEnv=which; xmlEl.innerHTML=XML[which].join("\n"); envFlip.innerHTML=FLIP[which];
+    envTitle.textContent = which==="replace" ? "Server → device · Replace" : "Device → server · Status";
+    envHint.textContent = which==="replace"
+      ? "A CSP setting doesn’t travel as “a setting” — it travels as this. Tap any highlighted element."
+      : "The device answers each command with its own envelope. Tap an element to see how it references the request.";
+    envDetail.innerHTML='<div class="dt">Pick an element</div><div class="dd">Tap any highlighted tag in the message on the left.</div>';
+    [].forEach.call(xmlEl.querySelectorAll(".tok"),function(t){
+      t.addEventListener("click",function(){
+        [].forEach.call(xmlEl.querySelectorAll(".tok"),function(x){x.classList.remove("active");});
+        t.classList.add("active");
+        var e=EXP[t.dataset.k]; if(!e)return;
+        envDetail.innerHTML='<div class="dt">'+e[0]+'</div><div class="dd">'+e[1]+'</div>'+(e[2]?'<div class="dnote">'+e[2]+'</div>':'');
+      });
+    });
+  }
+  var envseg=document.getElementById("envseg");
+  envseg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+    [].forEach.call(envseg.children,function(c){c.classList.toggle("on",c===b);});renderXML(b.dataset.e);});
+  renderXML("replace");
+
+  /* ================= CONDITIONAL ACCESS ================= */
+  var caState="ok", caRunning=false;
+  var castate=document.getElementById("castate"), carun=document.getElementById("carun");
+  var capipe=document.getElementById("capipe"), caStages=capipe.querySelectorAll(".ca-stage");
+  var caVerdict=document.getElementById("ca-verdict"), caProp=document.getElementById("ca-prop");
+  var caOutcome=document.getElementById("ca-outcome"), caBadge=document.getElementById("ca-badge"),
+      caOt=document.getElementById("ca-ot"), caOd=document.getElementById("ca-od");
+  castate.addEventListener("click",function(e){var b=e.target.closest("button");if(!b||caRunning)return;
+    caState=b.dataset.s;[].forEach.call(castate.children,function(c){c.classList.toggle("on",c===b);});});
+  function resetCA(){caRunning=false;if(carun)carun.disabled=false;
+    caStages.forEach(function(s){s.classList.remove("active","bad");});
+    if(caVerdict)caVerdict.textContent="verdict = …";
+    if(caProp)caProp.textContent="device.isCompliant = …";
+    if(caOutcome){caOutcome.className="ca-outcome idle";}
+    if(caBadge)caBadge.textContent="Awaiting";
+    if(caOt)caOt.textContent="Set a device state and run the decision.";
+    if(caOd)caOd.textContent="Toggle Compliant / Noncompliant to see both branches. CA evaluates at token issuance, inside Entra.";}
+  function caStep(i){
+    var bad = caState==="bad";
+    if(i>=caStages.length){
+      later(function(){
+        if(bad){caOutcome.className="ca-outcome block";caBadge.textContent="Block";
+          caOt.textContent="Access denied.";
+          caOd.innerHTML="The grant control isn’t satisfied, so no token is issued. The user is sent to Company Portal to remediate — and stays blocked until Intune re-evaluates and the directory state syncs.";}
+        else{caOutcome.className="ca-outcome grant";caBadge.textContent="Grant";
+          caOt.textContent="Access allowed.";
+          caOd.innerHTML="<code>device.isCompliant = true</code> satisfies the grant control, so Entra issues the token and the app opens.";}
+        caRunning=false;carun.disabled=false;
+      },700);
+      return;
+    }
+    var s=caStages[i]; caStages.forEach(function(x){x.classList.remove("active","bad");});
+    s.classList.add("active"); if(bad && i>=1) s.classList.add("bad");
+    if(i===1){caVerdict.textContent = bad ? "verdict = noncompliant" : "verdict = compliant";}
+    if(i===2){caProp.textContent = bad ? "device.isCompliant = false" : "device.isCompliant = true";}
+    later(function(){caStep(i+1);},1300);
+  }
+  carun.addEventListener("click",function(){if(caRunning)return;caRunning=true;carun.disabled=true;
+    caStages.forEach(function(s){s.classList.remove("active","bad");});
+    caVerdict.textContent="verdict = …";caProp.textContent="device.isCompliant = …";
+    caOutcome.className="ca-outcome idle";caBadge.textContent="Evaluating…";
+    caOt.textContent="Running…";caOd.textContent="Walking the chain from device state to access decision.";
+    caStep(0);});
+
+  /* ================= VERBS ref ================= */
+  var VERBS=[
+    {v:"Replace",dir:"down",d:"Set an existing node’s value. The workhorse — most profile settings land as a Replace."},
+    {v:"Add",dir:"down",d:"Create a node that doesn’t exist yet, then set it."},
+    {v:"Get",dir:"up",d:"Read a node’s value. How Intune collects data — inventory and compliance evaluation issue Gets."},
+    {v:"Exec",dir:"down",d:"Run an action a CSP exposes (wipe, rotate a key) rather than store a value."},
+    {v:"Delete",dir:"down",d:"Remove a node — how a setting is un-applied when a profile is unassigned."},
+    {v:"Atomic",dir:"down",d:"Wrap commands so they all succeed or all roll back together."},
+    {v:"Status",dir:"up",d:"The client’s reply per command — 200 OK or an error code. Drives Succeeded/Error."}
+  ];
+  var dc={down:"var(--down)",up:"var(--up)"};
+  var verbsEl=document.getElementById("verbs"), vdetail=document.getElementById("vdetail");
+  VERBS.forEach(function(o){
+    var b=document.createElement("button");b.className="verb-btn";
+    b.innerHTML='<i style="background:'+dc[o.dir]+'"></i>'+o.v;
+    b.addEventListener("click",function(){[].forEach.call(verbsEl.children,function(c){c.classList.remove("sel");});b.classList.add("sel");
+      vdetail.innerHTML='<div class="vt" style="color:'+dc[o.dir]+'">'+o.v+'</div><div class="vd">'+o.d+'</div>'+
+        '<div class="vdir">'+(o.dir==="down"?"server → device · configuration":"device → server · data / status")+'</div>';});
+    verbsEl.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>
