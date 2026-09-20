@@ -73,7 +73,9 @@ Rejected directions, so they don't get re-proposed: amber-on-slate, and Microsof
 
 ## Page types
 
-Content is organised into topic folders (`CSP-MDM-Deep-Dive/` is the first). Only `index.md` stays at the root — Jekyll expects it there. Link to pages from the homepage with root-absolute paths (`/CSP-MDM-Deep-Dive/page.html`), which stay correct regardless of which page does the linking.
+Content is organised into topic folders (`CSP-MDM-Deep-Dive/` is the first). Only the site's `index.md` stays at the root — Jekyll expects it there.
+
+Each topic folder has its own `index.md` listing that topic's pages; the homepage links to the folder, not to pages inside it. So adding a page means editing that folder's index, not the homepage. Use root-absolute paths (`/CSP-MDM-Deep-Dive/page.html`), which stay correct regardless of which page does the linking.
 
 **Markdown pages** (`CSP-MDM-Deep-Dive/csp-anatomy.md`) — front matter with `layout: default` and `title`.
 

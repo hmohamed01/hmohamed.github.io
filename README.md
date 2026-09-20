@@ -44,7 +44,9 @@ Content here.
 
 **`layout: default` is the only layout this theme provides.** Modernist ships a single `_layouts/default.html` — `home`, `page` and `post` come from other themes and will render the page unstyled with only a build *warning*, not an error. The deploy will go green regardless, so the failure is easy to miss.
 
-Link to it from the homepage with a root-absolute path, e.g. `[About](/Topic-Folder/about.html)`. Relative paths work too, but absolute ones stay correct no matter which page links to them.
+Each topic folder carries an `index.md` that introduces the topic and links to its pages. The homepage links to the folder (`/Topic-Folder/`), not to individual pages inside it.
+
+Use root-absolute paths in links, e.g. `[About](/Topic-Folder/about.html)`. Relative paths work too, but absolute ones stay correct no matter which page links to them.
 
 ## Editing the look
 
