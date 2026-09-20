@@ -93,7 +93,13 @@ The escaped-pipe form `[[X\|alias]]` appears inside table cells — unwrapping t
 
 Re-link cross-references only if the target note has also been imported.
 
+## CLAUDE.md is excluded from the build
+
+`jekyll-optional-front-matter` (on by default for GitHub Pages) renders every root `.md` as a page and runs Liquid over it — backticks do not protect anything, since Liquid parses raw text before Markdown. This file quotes Liquid tags, so `_config.yml` excludes it. Adding a root `.md` that quotes `{{` or `{%` needs the same treatment, or a `raw` tag around the example.
+
+Note that setting `exclude` replaces Jekyll's default list rather than extending it, which is why `Gemfile` and `vendor/` are repeated there.
+
 ## Notes
 
 - Verification screenshots are possible without a browser: `qlmanage -t -s 900 -o . page.html` renders HTML through WebKit. It blocks remote stylesheets and fonts, so inline the theme CSS into a scratch copy first; webfonts will still fall back to system mono.
-- The README's "Current state" section drifts easily — it currently claims `index.md` carries theme demo boilerplate, which is no longer true. Update it when page content changes.
+- The README's "Files" and "Current state" sections describe page content and drift whenever pages are added or removed. Update them in the same commit.
