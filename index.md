@@ -12,3 +12,4 @@ title: Hatem Mohamed
 </nav>
 
 - [CSP & MDM Deep Dive](/CSP-MDM-Deep-Dive/)
+- [Entra & Intune Graph Data Models](/Entra-Intune-Graph-Data-Models/)
